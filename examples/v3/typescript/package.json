@@ -29,7 +29,7 @@
     "statements": 80
   },
   "devDependencies": {
-    "@pact-foundation/pact": "10.1.2",
+    "@pact-foundation/pact": "^10.4.1",
     "@types/chai": "^4.3.3",
     "@types/chai-as-promised": "7.1.5",
     "@types/mocha": "^9.1.1",
@@ -49,6 +49,7 @@
     "typescript": "^4.7.4"
   },
   "dependencies": {
+    "@pact-foundation/pact-node": "^10.17.7",
     "dotenv": "^16.0.3"
   }
 }

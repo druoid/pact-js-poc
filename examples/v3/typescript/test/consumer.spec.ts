@@ -5,7 +5,7 @@ import * as sinonChai from 'sinon-chai';
 import { PactV3, MatchersV3, LogLevel } from '@pact-foundation/pact';
 import { UserService } from '../index';
 const { like } = MatchersV3;
-const LOG_LEVEL = process.env.LOG_LEVEL || 'TRACE';
+const LOG_LEVEL = process.env.LOG_LEVEL || 'Debug';
 
 const expect = chai.expect;
 
@@ -51,5 +51,3 @@ describe('The Users API', () => {
     });
   });
 });
-
-

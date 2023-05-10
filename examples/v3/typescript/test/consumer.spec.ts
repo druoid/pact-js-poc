@@ -1,84 +1,55 @@
-import { expect } from 'chai';
-import { Pact, Matchers, InteractionObject } from '@pact-foundation/pact';
-import { Publisher, Verifier } from '@pact-foundation/pact-node';
-import { UserService } from '../index';
+import * as chai from 'chai';
+import * as chaiAsPromised from 'chai-as-promised';
 import * as path from 'path';
+import * as sinonChai from 'sinon-chai';
+import { PactV3, MatchersV3, LogLevel } from '@pact-foundation/pact';
+import { UserService } from '../index';
+const { like } = MatchersV3;
+const LOG_LEVEL = process.env.LOG_LEVEL || 'TRACE';
 
-const { like } = Matchers;
+const expect = chai.expect;
 
-describe('The Users API (consumer)', () => {
+chai.use(sinonChai);
+chai.use(chaiAsPromised);
+
+describe('The Users API', () => {
   let userService: UserService;
 
-  const userExample = { id: 1, name: 'Homer Simpson', age: 39 };
-  const EXPECTED_BODY = like(userExample);
-
-  const provider = new Pact({
+  // Setup the 'pact' between two applications
+  const provider = new PactV3({
     consumer: 'User Web',
     provider: 'User API',
-    logLevel: 'debug',
-    dir: path.resolve(process.cwd(), 'pacts'),
-    log: path.resolve(process.cwd(), 'logs', 'pact.log'),
-    spec: 2,
+    logLevel: LOG_LEVEL as LogLevel,
   });
-
-  before(async () => {
-    await provider.setup();
-    userService = new UserService(provider.mockService.baseUrl);
-  });
-
-  after(async () => {
-    await provider.finalize();
-
-    const opts = {
-      pactFilesOrDirs: [path.resolve(process.cwd(), 'pacts')],
-      pactBroker: 'https://fluxpoc.pactflow.io',
-      pactBrokerToken: 'VBNJwYHPcX_pXGiMcxT5eQ',
-      consumerVersion: '1.0.0',
-    };
-    await new Publisher(opts).publish();
-  });
+  const userExample = { id: 1, name: 'Homer Simpson' };
+  const EXPECTED_BODY = like(userExample);
 
   describe('get /users/:id', () => {
-    it('returns the requested user (consumer)', async () => {
-      const interaction: InteractionObject = {
-        state: 'a user with ID 1 exists',
-        uponReceiving: 'a request to get a user',
-        withRequest: {
+    it('returns the requested user', () => {
+      // Arrange
+      provider
+        .given('a user with ID 1 exists')
+        .uponReceiving('a request to get a user')
+        .withRequest({
           method: 'GET',
           path: '/users/1',
-        },
-        willRespondWith: {
+        })
+        .willRespondWith({
           status: 200,
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'content-type': 'application/json' },
           body: EXPECTED_BODY,
-        },
-      };
+        });
 
-      await provider.addInteraction(interaction);
-      const response = await userService.getUser(1);
+      return provider.executeTest(async (mockserver) => {
+        // Act
+        userService = new UserService(mockserver.url);
+        const response = await userService.getUser(1);
 
-      expect(response.data).to.deep.eq(userExample);
+        // Assert
+        expect(response.data).to.deep.eq(userExample);
+      });
     });
   });
-
-  describe('Pact Verification', () => {
-    it('validates the expectations of UserService', async () => {
-      const opts = {
-        provider: 'User API',
-        providerBaseUrl: provider.mockService.baseUrl,
-        pactUrls: [
-          'https://fluxpoc.pactflow.io/pacts/provider/User%20API/consumer/User%20Web/version/1.0.0',
-        ],
-        publishVerificationResult: true,
-        providerVersion: '1.0.0',
-        pactBroker: 'https://fluxpoc.pactflow.io',
-        pactBrokerToken: 'VBNJwYHPcX_pXGiMcxT5eQ',
-      };
-
-      await new Verifier(opts).verify();
-    });
-  });  
 });
-
 
 

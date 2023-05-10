@@ -30,19 +30,16 @@ describe('Publish pact', () => {
         });       
     })
 
-    const opts = {
-        providerBaseUrl:'https://localhost:8081',
-        provider: "User Profile Service",
-        publishVerificationResult: true,
-        providerVersion: "1.0.4",
-      };
-    
-    
-    new Verifier(opts).verifyProvider().then((output) => {
-        console.log('Pact verification complete!');
-        console.log(output);
-    }).catch((error) => {
-        console.error('Pact verification failed: ', error);
-        process.exit(1);
-    });  
+    describe('Pact verification', () => {
+        it('validates the expectations of Matching Service', () => {
+          return new Verifier({
+            providerBaseUrl: 'https://fluxpoc.pactflow.io',
+            pactUrls: [ path.resolve(process.cwd(), "./pacts/User Web-User API.json") ],
+          })
+            .verifyProvider()
+            .then(() => {
+              console.log('Pact Verification Complete!');
+            });
+        });
+    });    
 });
